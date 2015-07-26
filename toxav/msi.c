@@ -24,10 +24,9 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include "msi.h"
 #include "../toxcore/logger.h"
 #include "../toxcore/util.h"
-
-#include "msi.h"
 
 #include <unistd.h>
 #include <string.h>
@@ -774,7 +773,7 @@ static int terminate_call ( MSISession *session, MSICall *call )
     return 0;
 }
 
-static void handle_remote_connection_change(Messenger *messenger, int friend_num, uint8_t status, void *session_p)
+static void handle_remote_connection_change(Messenger *messenger, uint32_t friend_num, uint8_t status, void *session_p)
 {
     (void)messenger;
     MSISession *session = session_p;
@@ -1101,7 +1100,8 @@ static int handle_recv_error ( MSISession *session, MSICall *call, MSIMessage *m
  *
  *
  */
-static void msi_handle_packet ( Messenger *messenger, int source, const uint8_t *data, uint16_t length, void *object )
+static void msi_handle_packet ( Messenger *messenger, uint32_t source, const uint8_t *data, uint16_t length,
+                                void *object )
 {
     LOGGER_DEBUG("Got msi message");
     /* Unused */
@@ -1287,10 +1287,19 @@ int msi_kill ( MSISession *session )
             /* Cancel all? */
             uint16_t _it = 0;
             /*for ( ; _it < session->calls[idx]->peer_count; _it++ )
-             * FIXME: will not work on multiple peers, must cancel call for all peers
-             */
-            msi_cancel ( session, idx, session->calls[idx]->peers [_it], "MSI session terminated!" );
+                * FIXME: will not work on multiple peers, must cancel call for all peers
+                */
+            MSICallState state = session->calls[idx]->state;
+
+            if (state == msi_CallInviting) {
+                msi_cancel( session, idx, session->calls[idx]->peers [_it], "MSI session terminated!" );
+            } else {
+                msi_stopcall(session, idx);
+            }
         }
+
+    free(((TimerHandler *)session->timer_handler)->timers);
+    free(session->timer_handler);
 
     free ( session->calls );
     pthread_mutex_unlock(session->mutex);
@@ -1435,7 +1444,7 @@ int msi_cancel ( MSISession *session, int32_t call_index, uint32_t peer, const c
     }
 
     if ( session->calls[call_index]->state != msi_CallInviting ) {
-        LOGGER_ERROR("Call is in invalid state!");
+        LOGGER_ERROR("Call is in invalid state: %u", session->calls[call_index]->state);
         pthread_mutex_unlock(session->mutex);
         return msi_ErrorInvalidState;
     }

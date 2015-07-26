@@ -11,7 +11,9 @@ CLEANFILES = $(top_builddir)/libtoxcore.pc
 
 
 EXTRA_DIST = \
+	README.md \
 	libtoxcore.pc.in \
+	tox.spec \
 	dist-build/android-arm.sh \
 	dist-build/android-armv7.sh \
 	dist-build/android-x86.sh \
@@ -20,9 +22,9 @@ EXTRA_DIST = \
 	$(top_srcdir)/docs/updates/Crypto.md \
 	$(top_srcdir)/docs/updates/Spam-Prevention.md \
 	$(top_srcdir)/docs/updates/Symmetric-NAT-Transversal.md \
-	$(top_srcdir)/tools/README \
-	$(top_srcdir)/tools/astylerc \
-	$(top_srcdir)/tools/pre-commit
+	$(top_srcdir)/other/astyle/README.md \
+	$(top_srcdir)/other/astyle/astylerc \
+	$(top_srcdir)/other/astyle/pre-commit
 
 if BUILD_AV
 

@@ -1,6 +1,6 @@
 /* DHT.h
  *
- * An implementation of the DHT as seen in http://wiki.tox.im/index.php/DHT
+ * An implementation of the DHT as seen in docs/updates/DHT.md
  *
  *  Copyright (C) 2013 Tox project All Rights Reserved.
  *
@@ -28,21 +28,8 @@
 #include "network.h"
 #include "ping_array.h"
 
-/* Encryption and signature keys definition */
-#define ENC_PUBLIC_KEY crypto_box_PUBLICKEYBYTES
-#define ENC_SECRET_KEY crypto_box_SECRETKEYBYTES
-#define SIG_PUBLIC_KEY crypto_sign_PUBLICKEYBYTES
-#define SIG_SECRET_KEY crypto_sign_SECRETKEYBYTES
-
-/* Long keys for group chats */
-#define EXT_SECRET_KEY (ENC_SECRET_KEY + SIG_SECRET_KEY)
-#define EXT_PUBLIC_KEY (ENC_PUBLIC_KEY + SIG_PUBLIC_KEY)
-
 /* Size of the client_id in bytes. */
-#define CLIENT_ID_SIZE ENC_PUBLIC_KEY // For consistency
-
-/* Use asserts wisely, since real siganture size might vary if libsodium changes it */
-#define SIGNATURE_SIZE crypto_sign_BYTES
+#define CLIENT_ID_SIZE crypto_box_PUBLICKEYBYTES
 
 /* Maximum number of clients stored per friend. */
 #define MAX_FRIEND_CLIENTS 8
@@ -161,17 +148,15 @@ typedef struct {
 } DHT_Friend;
 
 typedef struct {
-    uint8_t     client_id[CLIENT_ID_SIZE];
+    uint8_t     public_key[crypto_box_PUBLICKEYBYTES];
     IP_Port     ip_port;
 }
 Node_format;
 
-typedef struct __attribute__ ((__packed__))
-{
-    uint8_t     client_id[EXT_PUBLIC_KEY];
-    IP_Port     ip_port;
-}
-Announced_Node_format;
+/* Return packet size of packed node with ip_family on success.
+ * Return -1 on failure.
+ */
+int packed_node_size(uint8_t ip_family);
 
 /* Pack number of nodes into data of maxlength length.
  *
@@ -231,18 +216,12 @@ typedef struct {
     DHT_Friend    *friends_list;
     uint16_t       num_friends;
 
-    // Used after loading of file (tox_load), but no longer needed after connect (tox_connect)
-    // Unsure if friends_list and num_friends could just be used instead?
-    int has_loaded_friends_clients; // Whether or not we have loaded on the first do_DHT
-    DHT_Friend    *loaded_friends_list;
-    uint32_t       loaded_num_friends;
-    Client_data   *loaded_clients_list;
-    uint32_t       loaded_num_clients;
+    Node_format   *loaded_nodes_list;
+    uint32_t       loaded_num_nodes;
+    unsigned int   loaded_nodes_index;
 
     Shared_Keys shared_keys_recv;
     Shared_Keys shared_keys_sent;
-
-    struct ANNOUNCE *announce;
 
     struct PING   *ping;
     Ping_Array    dht_ping_array;

@@ -7,7 +7,7 @@ before_script:
   #installing libsodium, needed for Core
   - git clone git://github.com/jedisct1/libsodium.git > /dev/null
   - cd libsodium
-  - git checkout tags/0.7.0 > /dev/null
+  - git checkout tags/1.0.0 > /dev/null
   - ./autogen.sh > /dev/null
   - ./configure > /dev/null
   - make check -j3 > /dev/null
@@ -32,7 +32,7 @@ before_script:
   - sudo make install > /dev/null
   - cd ..
   #installing vpx
-  - git clone http://git.chromium.org/webm/libvpx.git > /dev/null
+  - git clone https://chromium.googlesource.com/webm/libvpx > /dev/null
   - cd libvpx
   - ./configure --enable-shared > /dev/null
   - make -j3 >/dev/null

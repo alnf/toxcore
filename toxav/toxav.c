@@ -23,7 +23,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#define __TOX_DEFINED__
+#define TOX_DEFINED
 typedef struct Messenger Tox;
 
 #define _GNU_SOURCE /* implicit declaration warning */
@@ -460,7 +460,13 @@ int toxav_prepare_video_frame ( ToxAv *av, int32_t call_index, uint8_t *dest, in
         return av_ErrorInvalidState;
     }
 
-    if (cs_set_video_encoder_resolution(call->cs, input->d_w, input->d_h) < 0) {
+    if (!(call->cs->capabilities & cs_VideoEncoding)) {
+        pthread_mutex_unlock(call->mutex);
+        LOGGER_WARNING("Call doesn't support encoding video: %d", call_index);
+        return av_ErrorInvalidState;
+    }
+
+    if (cs_set_video_encoder_resolution(call->cs, input->w, input->h) < 0) {
         pthread_mutex_unlock(call->mutex);
         return av_ErrorSettingVideoResolution;
     }

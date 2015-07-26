@@ -2,6 +2,9 @@
 
 - [Installation](#installation)
   - [Unix like](#unix)
+    - [Quick install](#quick-install)
+    - [Build manually](#build-manually)
+      - [Compile toxcore](#compile-toxcore)
   - [OS X](#osx)
     - [Homebrew](#homebrew)
     - [Non-Homebrew](#non-homebrew)
@@ -24,22 +27,40 @@
 <a name="unix" />
 ###Most Unix like OSes:
 
+#### Quick install:
+
+On Gentoo:
+```
+# layman -f && layman -a tox-overlay && emerge net-libs/tox
+```
+
+And you're done `:)`</br>
+If you happen to run some other distro which isn't made for compiling, there are steps below:
+
+#### Build manually
+
 Build dependencies:
 
 Note: package fetching commands may vary by OS.
 
-On Ubuntu:
+On Ubuntu `< 15.04` / Debian `< 8`:
 
 ```bash
 sudo apt-get install build-essential libtool autotools-dev automake checkinstall check git yasm
 ```
 
+On Ubuntu `>= 15.04` / Debian `>= 8`:
+```bash
+sudo apt-get install build-essential libtool autotools-dev automake checkinstall check git yasm libsodium13 libsodium-dev
+```
+
 On Fedora:
 
 ```bash
-yum groupinstall "Development Tools"
-yum install libtool autoconf automake check check-devel
+dnf groupinstall "Development Tools"
+dnf install libtool autoconf automake check check-devel
 ```
+Using ``dnf install @"Development Tools"`` is also valid and slightly shorter / cleaner way. ``@"Rpm Development Tools"``  would carry the remaining dependencies listed here.
 
 On SunOS:
 
@@ -53,13 +74,13 @@ pkg install net-im/tox
 ```
 Note, if you install from ports select NaCl for performance, and sodium if you want it to be portable.
 
-**For A/V support, also install the dependences listed in the [libtoxav] (#libtoxav) section.**
+**For A/V support, also install the dependences listed in the [libtoxav](#libtoxav) section.** Note that you have to install those dependencies **before** compiling `toxcore`.
 
-You should get and install [libsodium](https://github.com/jedisct1/libsodium):
+You should get and install [libsodium](https://github.com/jedisct1/libsodium). If you have installed `libsodium` from repo, ommit this step, and jump directly to [compiling toxcore](#compile-toxcore):
 ```bash
 git clone git://github.com/jedisct1/libsodium.git
 cd libsodium
-git checkout tags/1.0.0
+git checkout tags/1.0.3
 ./autogen.sh
 ./configure && make check
 sudo checkinstall --install --pkgname libsodium --pkgversion 1.0.0 --nodoc
@@ -74,7 +95,7 @@ this will install the libs to /usr/local/lib and the headers to /usr/local/inclu
 ```bash
 git clone git://github.com/jedisct1/libsodium.git
 cd libsodium
-git checkout tags/1.0.0
+git checkout tags/1.0.3
 ./autogen.sh
 ./configure
 make check
@@ -82,13 +103,23 @@ sudo make install
 cd ..
 ```
 
-If your default prefix is /usr/local and you happen to get an error that says "error while loading shared libraries: libtoxcore.so.0: cannot open shared object file: No such file or directory", then you can try running ```sudo ldconfig```. If that doesn't fix it, run:
-```
+If your default prefix is ``/usr/local`` and you happen to get an error that says ``"error while loading shared libraries: libtoxcore.so.0: cannot open shared object file: No such file or directory"``, then you can try running ``sudo ldconfig``. If that doesn't fix it, run:
+
+```bash
 echo '/usr/local/lib/' | sudo tee -a /etc/ld.so.conf.d/locallib.conf
 sudo ldconfig
 ```
 
-Then clone this repo and generate makefile:
+You may run into a situation where there is no ``/etc/ld.so.conf.d`` directory. You could either create it manually, or append path to local library to ``ld.so.conf``:
+
+```bash
+echo '/usr/local/lib/' | sudo tee -a /etc/ld.so.conf 
+sudo ldconfig
+```
+
+##### Compile toxcore
+
+Then clone this repo, generate makefile, and install `toxcore` system-wide:
 ```bash
 git clone git://github.com/irungentoo/toxcore.git
 cd toxcore
@@ -104,6 +135,8 @@ sudo make install
 
 You need the latest XCode with the Developer Tools (Preferences -> Downloads -> Command Line Tools).
 The following libraries are required along with libsodium and cmake for Mountain Lion and XCode 4.6.3 install libtool, automake and autoconf. You can download them with Homebrew, or install them manually.
+
+**Note: OS X users can also install Toxcore using [osx_build_script_toxcore.sh](other/osx_build_script_toxcore.sh)**
 
 There are no binaries/executables going to /bin/ or /usr/bin/ now. Everything is compiled and ran from the inside your local branch. See [Usage](#usage) below.
 <a name="homebrew" />
@@ -169,15 +202,21 @@ Different: libvpx (webm) libopus pkgconfig gettext
 (the libintl, from gettext, built into OS X 10.5 is missing libintl_setlocale, but the Macports build has it)
 
 Verify where libintl is on your system: (MacPorts puts it in /opt/local)
-$ for d in /usr/local/lib /opt/local/lib /usr/lib /lib; do ls -l $d/libintl.*; done
+```
+for d in /usr/local/lib /opt/local/lib /usr/lib /lib; do ls -l $d/libintl.*; done
+```
 
 Check if that copy has libintl_setlocale:
+```
 nm /opt/local/lib/libintl.8.dylib | grep _libintl_setlocale
+```
 
 Certain other tools may not be installed, or outdated, and should also be installed from MacPorts for simplicity: git cmake
 
 If libsodium was installed with MacPorts, you may want to symlink the copy in /opt/local/lib to /usr/local/lib. That way you don't need special configure switches for toxcore to find libsodium, and every time MacPorts updates libsodium, the new version will be linked to toxcore every time you build:
+```
 ln -s /opt/local/lib/libsodium.dylib /usr/local/lib/libsodium.dylib
+```
 
 Much of the build can then be done as for other platforms: git clone, and so on. Differences will be noted with (OS X 10.5 specific)
 
@@ -215,7 +254,9 @@ There is also a shell script called "osx_build_script_toxcore.txt" which automat
 
 If after running ./configure you get an error about core being unable to find libsodium (and you have installed it) run the following in place of ./configure;
 
+```
 ./configure --with-libsodium-headers=/usr/local/include/ --with-libsodium-libs=/usr/local/lib
+```
 
 Ensure you set the locations correctly depending on where you installed libsodium on your computer.
 
@@ -435,7 +476,7 @@ make install
 
 <a name="Clients" />
 ####Clients:
-While [Toxic](https://github.com/tox/toxic) is no longer in core, a list of Tox clients are located in our [wiki](http://wiki.tox.im/client)
+While [Toxic](https://github.com/tox/toxic) is no longer in core, a list of Tox clients are located in our [wiki](https://wiki.tox.chat/doku.php?id=clients)
 
 
 

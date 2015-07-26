@@ -28,56 +28,17 @@
 #endif
 
 #include "crypto_core.h"
-#include "util.h"
 
-// Need dht because of ENC_SECRET_KEY and ENC_PUBLIC_KEY
-#include "DHT.h"
+#if crypto_box_PUBLICKEYBYTES != 32
+#error crypto_box_PUBLICKEYBYTES is required to be 32 bytes for public_key_cmp to work,
+#endif
 
-// Long keypair: curve + ed. Currently for group chats and announcement purposes.
-void create_long_keypair(uint8_t *pk, uint8_t *sk)
-{
-    crypto_box_keypair(pk, sk);
-    crypto_sign_keypair(pk + ENC_SECRET_KEY, sk + ENC_PUBLIC_KEY);
-}
-
-/* Sign input data
- * Add signer long public key, time stamp and signature in the end of the data
- * Return -1 if fail, 0 if success
- */
-int sign_data(const uint8_t *data, uint32_t length, const uint8_t *ext_secret_key, const uint8_t *ext_public_key, uint8_t *output)
-{
-    memcpy(output, data, length);
-    memcpy(output + length, ext_public_key, EXT_PUBLIC_KEY);
-
-    unix_time_update(); 
-    U64_to_bytes(output + length + EXT_PUBLIC_KEY, unix_time());
-    uint32_t mlen = length + EXT_PUBLIC_KEY + sizeof(uint64_t);
-
-    if (crypto_sign_detached(output+mlen, NULL, output, mlen, SIG_KEY(ext_secret_key)) != 0)
-        return -1;
-    
-    return 0;
-}
-
-/* Use this instead of memcmp; not vulnerable to timing attacks.
+/* compare 2 public keys of length crypto_box_PUBLICKEYBYTES, not vulnerable to timing attacks.
    returns 0 if both mem locations of length are equal,
    return -1 if they are not. */
-int crypto_cmp(const uint8_t *mem1, const uint8_t *mem2, size_t length)
+int public_key_cmp(const uint8_t *pk1, const uint8_t *pk2)
 {
-    if (length == 16) {
-        return crypto_verify_16(mem1, mem2);
-    } else if (length == 32) {
-        return crypto_verify_32(mem1, mem2);
-    }
-
-    unsigned int check = 0;
-    size_t i;
-
-    for (i = 0; i < length; ++i) {
-        check |= mem1[i] ^ mem2[i];
-    }
-
-    return (1 & ((check - 1) >> 8)) - 1;
+    return crypto_verify_32(pk1, pk2);
 }
 
 /*  return a random number.
@@ -223,19 +184,10 @@ void new_symmetric_key(uint8_t *key)
     randombytes(key, crypto_box_KEYBYTES);
 }
 
-static uint8_t base_nonce[crypto_box_NONCEBYTES];
-static uint8_t nonce_set = 0;
-
 /* Gives a nonce guaranteed to be different from previous ones.*/
 void new_nonce(uint8_t *nonce)
 {
-    if (nonce_set == 0) {
-        random_nonce(base_nonce);
-        nonce_set = 1;
-    }
-
-    increment_nonce(base_nonce);
-    memcpy(nonce, base_nonce, crypto_box_NONCEBYTES);
+    random_nonce(nonce);
 }
 
 /* Create a request to peer.
@@ -283,26 +235,26 @@ int create_request(const uint8_t *send_public_key, const uint8_t *send_secret_ke
 int handle_request(const uint8_t *self_public_key, const uint8_t *self_secret_key, uint8_t *public_key, uint8_t *data,
                    uint8_t *request_id, const uint8_t *packet, uint16_t length)
 {
-    if (length > crypto_box_PUBLICKEYBYTES * 2 + crypto_box_NONCEBYTES + 1 + crypto_box_MACBYTES &&
-            length <= MAX_CRYPTO_REQUEST_SIZE) {
-        if (memcmp(packet + 1, self_public_key, crypto_box_PUBLICKEYBYTES) == 0) {
-            memcpy(public_key, packet + 1 + crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-            uint8_t nonce[crypto_box_NONCEBYTES];
-            uint8_t temp[MAX_CRYPTO_REQUEST_SIZE];
-            memcpy(nonce, packet + 1 + crypto_box_PUBLICKEYBYTES * 2, crypto_box_NONCEBYTES);
-            int len1 = decrypt_data(public_key, self_secret_key, nonce,
-                                    packet + 1 + crypto_box_PUBLICKEYBYTES * 2 + crypto_box_NONCEBYTES,
-                                    length - (crypto_box_PUBLICKEYBYTES * 2 + crypto_box_NONCEBYTES + 1), temp);
+    if (length <= crypto_box_PUBLICKEYBYTES * 2 + crypto_box_NONCEBYTES + 1 + crypto_box_MACBYTES ||
+            length > MAX_CRYPTO_REQUEST_SIZE)
+        return -1;
 
-            if (len1 == -1 || len1 == 0)
-                return -1;
+    if (memcmp(packet + 1, self_public_key, crypto_box_PUBLICKEYBYTES) != 0)
+        return -1;
 
-            request_id[0] = temp[0];
-            --len1;
-            memcpy(data, temp + 1, len1);
-            return len1;
-        }
-    }
+    memcpy(public_key, packet + 1 + crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+    uint8_t nonce[crypto_box_NONCEBYTES];
+    uint8_t temp[MAX_CRYPTO_REQUEST_SIZE];
+    memcpy(nonce, packet + 1 + crypto_box_PUBLICKEYBYTES * 2, crypto_box_NONCEBYTES);
+    int len1 = decrypt_data(public_key, self_secret_key, nonce,
+                            packet + 1 + crypto_box_PUBLICKEYBYTES * 2 + crypto_box_NONCEBYTES,
+                            length - (crypto_box_PUBLICKEYBYTES * 2 + crypto_box_NONCEBYTES + 1), temp);
 
-    return -1;
+    if (len1 == -1 || len1 == 0)
+        return -1;
+
+    request_id[0] = temp[0];
+    --len1;
+    memcpy(data, temp + 1, len1);
+    return len1;
 }

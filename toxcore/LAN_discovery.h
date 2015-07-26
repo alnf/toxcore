@@ -37,6 +37,12 @@ int send_LANdiscovery(uint16_t port, DHT *dht);
 /* Sets up packet handlers. */
 void LANdiscovery_init(DHT *dht);
 
+/* Clear packet handlers. */
+void LANdiscovery_kill(DHT *dht);
+
+/* Is IP a local ip or not. */
+_Bool Local_ip(IP ip);
+
 /* checks if a given IP isn't routable
  *
  *  return 0 if ip is a LAN ip.

@@ -89,7 +89,8 @@ static void callback_group_invite(Tox *tox, int fid, uint8_t type, const uint8_t
         current_group = tox_join_groupchat(tox, fid, data, length);
 }
 
-void callback_friend_message(Tox *tox, int fid, const uint8_t *message, uint16_t length, void *userdata)
+void callback_friend_message(Tox *tox, uint32_t fid, TOX_MESSAGE_TYPE type, const uint8_t *message, size_t length,
+                             void *userdata)
 {
     if (length == 1 && *message == 'c') {
         if (tox_del_groupchat(tox, current_group) == 0)
@@ -162,9 +163,15 @@ void send_irc_group(Tox *tox, uint8_t *msg, uint16_t len)
     uint8_t req[len];
     unsigned int i;
 
+    unsigned int spaces = 0;
+
     for (i = 0; i < (len - 1); ++i) {
-        if (msg[i + 1] == ':') {
-            break;
+        if (msg[i + 1] == ' ') {
+            ++spaces;
+        } else {
+            if (spaces >= 3 && msg[i + 1] == ':') {
+                break;
+            }
         }
 
         req[i] = msg[i + 1];
@@ -203,7 +210,7 @@ void send_irc_group(Tox *tox, uint8_t *msg, uint16_t len)
 
 Tox *init_tox(int argc, char *argv[])
 {
-    uint8_t ipv6enabled = TOX_ENABLE_IPV6_DEFAULT; /* x */
+    uint8_t ipv6enabled = 1; /* x */
     int argvoffset = cmdline_parsefor_ipv46(argc, argv, &ipv6enabled);
 
     if (argvoffset < 0)
@@ -215,21 +222,16 @@ Tox *init_tox(int argc, char *argv[])
         exit(0);
     }
 
-    Tox *tox = tox_new(0);
+    Tox *tox = tox_new(0, 0);
 
     if (!tox)
         exit(1);
 
-    tox_set_name(tox, (uint8_t *)IRC_NAME, sizeof(IRC_NAME) - 1);
+    tox_self_set_name(tox, (uint8_t *)IRC_NAME, sizeof(IRC_NAME) - 1, 0);
     tox_callback_friend_message(tox, &callback_friend_message, 0);
     tox_callback_group_invite(tox, &callback_group_invite, 0);
     tox_callback_group_message(tox, &copy_groupmessage, 0);
     tox_callback_group_action(tox, &copy_groupmessage, 0);
-
-    uint16_t port = atoi(argv[argvoffset + 2]);
-    unsigned char *binary_string = hex_string_to_bin(argv[argvoffset + 3]);
-    int res = tox_bootstrap_from_address(tox, argv[argvoffset + 1], port, binary_string);
-    free(binary_string);
 
     char temp_id[128];
     printf("\nEnter the address of irc_syncbots master (38 bytes HEX format):\n");
@@ -238,11 +240,16 @@ Tox *init_tox(int argc, char *argv[])
         exit (1);
     }
 
+    uint16_t port = atoi(argv[argvoffset + 2]);
+    unsigned char *binary_string = hex_string_to_bin(argv[argvoffset + 3]);
+    tox_bootstrap(tox, argv[argvoffset + 1], port, binary_string, 0);
+    free(binary_string);
+
     uint8_t *bin_id = hex_string_to_bin(temp_id);
-    int num = tox_add_friend(tox, bin_id, (uint8_t *)"Install Gentoo", sizeof("Install Gentoo") - 1);
+    uint32_t num = tox_friend_add(tox, bin_id, (uint8_t *)"Install Gentoo", sizeof("Install Gentoo") - 1, 0);
     free(bin_id);
 
-    if (num < 0) {
+    if (num == UINT32_MAX) {
         printf("\nSomething went wrong when adding friend.\n");
         exit(1);
     }
@@ -342,7 +349,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        tox_do(tox);
+        tox_iterate(tox);
         usleep(1000 * 50);
     }
 

@@ -3,9 +3,7 @@
 
 With the rise of governmental monitoring programs, Tox, a FOSS initiative, aims to be an easy to use, all-in-one communication platform that ensures their users full privacy and secure message delivery.<br /> <br />
 
-[**Website**](https://tox.im) **|** [**Download**](https://wiki.tox.im/Binaries) **|** [**Wiki**](https://wiki.tox.im/) **|** [**Blog**](https://blog.libtoxcore.so/) **|** [**FAQ**](https://wiki.tox.im/FAQ) **|** [**Binaries**](https://wiki.tox.im/Binaries) **|** [**Clients**](https://wiki.tox.im/Client) **|** [**Compiling**](/INSTALL.md) **|** 
-[**API**](https://libtoxcore.so/)  **|** [**bugs**](http://tox.lighthouseapp.com/projects/123754-tox/tickets) **|** [**help and suggestions**](http://support.libtoxcore.so) **|**
-**IRC:** #tox@freenode
+[**Website**](https://tox.chat) **|** [**Wiki**](https://wiki.tox.chat/) **|** [**Blog**](https://blog.tox.chat/) **|** [**FAQ**](https://wiki.tox.chat/doku.php?id=users:faq) **|** [**Binaries/Downloads**](https://wiki.tox.chat/doku.php?id=developers:binaries) **|** [**Clients**](https://wiki.tox.chat/doku.php?id=clients) **|** [**Compiling**](/INSTALL.md) **|** **IRC Channel:** [#tox@freenode](https://webchat.freenode.net/?channels=tox)
 
 
 ## The Complex Stuff:
@@ -30,7 +28,7 @@ We want Tox to be as simple as possible while remaining as secure as possible.
 The goal of this project is to create a configuration-free P2P Skype replacement. “Configuration-free” means that the user will simply have to open the program and will be capable of adding people and communicating with them without having to set up an account. There are many so-called Skype replacements, but all of them are either hard to configure for the normal user or suffer from being way too centralized.
 
 ## TODO:
-- [TODO](/docs/TODO)
+- [TODO](/docs/TODO.md)
 
 
 ## Documentation:
@@ -38,6 +36,4 @@ The goal of this project is to create a configuration-free P2P Skype replacement
 - [Compiling](/INSTALL.md)
 - [DHT Protocol](/docs/updates/DHT.md)<br />
 - [Crypto](/docs/updates/Crypto.md)<br />
-- [Ideas](https://wiki.tox.im/index.php/Ideas)
 
-[String]: https://en.wikipedia.org/wiki/String_(computer_science)

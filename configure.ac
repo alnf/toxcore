@@ -2,11 +2,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([tox], [0.0.0], [https://tox.im])
+AC_INIT([tox], [0.0.0])
 AC_CONFIG_AUX_DIR(configure_aux)
 AC_CONFIG_SRCDIR([toxcore/net_crypto.c])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([1.10 -Wall subdir-objects])
+AM_INIT_AUTOMAKE([1.10 -Wall subdir-objects tar-ustar])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -472,7 +472,7 @@ AC_C_BIGENDIAN
 # Checks for library functions.
 AC_FUNC_FORK
 AC_CHECK_FUNCS([gettimeofday memset socket strchr malloc])
-if (test "x$WIN32" != "xyes") && (test "x$MACH" != "xyes") && (test "x$DISABLE_RT" != "xyes"); then
+if (test "x$WIN32" != "xyes") && (test "x$MACH" != "xyes") && (test "x${host_os#*openbsd}" == "x$host_os") && (test "x$DISABLE_RT" != "xyes"); then
     AC_CHECK_LIB(rt, clock_gettime,
         [
             RT_LIBS="-lrt"
@@ -693,6 +693,7 @@ AM_CONDITIONAL(WIN32, test "x$WIN32" = "xyes")
 AC_CONFIG_FILES([Makefile
                  build/Makefile
                  libtoxcore.pc
+                 tox.spec
                 ])
 
 AM_COND_IF(BUILD_AV,

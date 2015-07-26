@@ -92,19 +92,12 @@ typedef int sock_t;
 #endif
 #endif
 
-#define MAX_UDP_PACKET_SIZE 65507
+#define MAX_UDP_PACKET_SIZE 2048
 
 #define NET_PACKET_PING_REQUEST    0   /* Ping request packet ID. */
 #define NET_PACKET_PING_RESPONSE   1   /* Ping response packet ID. */
 #define NET_PACKET_GET_NODES       2   /* Get nodes request packet ID. */
 #define NET_PACKET_SEND_NODES_IPV6 4   /* Send nodes response packet ID for other addresses. */
-
-#define NET_PACKET_GROUPCHAT_ANNOUNCE_REQUEST 5 /* Announce request packet ID */
-//#define NET_PACKET_ANNOUNCE_RESPONSE 6 /* Announce response packet ID */ //Not needed for now
-#define NET_PACKET_GROUPCHAT_GET_ANNOUNCED_NODES 7 /* Get announced nodes request packet ID */
-#define NET_PACKET_GROUPCHAT_SEND_ANNOUNCED_NODES 8 /* Send announced nodes request packet ID */
-#define NET_PACKET_GROUP_CHATS 9 /* WARNING. Temporary measure. */
-
 #define NET_PACKET_COOKIE_REQUEST  24  /* Cookie request packet */
 #define NET_PACKET_COOKIE_RESPONSE 25  /* Cookie response packet */
 #define NET_PACKET_CRYPTO_HS       26  /* Crypto handshake packet */
@@ -242,8 +235,6 @@ int ipport_equal(const IP_Port *a, const IP_Port *b);
 
 /* nulls out ip */
 void ip_reset(IP *ip);
-/* nulls out ip_port */
-void ipport_reset(IP_Port *ipport);
 /* nulls out ip, sets family according to flag */
 void ip_init(IP *ip, uint8_t ipv6enabled);
 /* checks if ip is valid */
@@ -343,6 +334,13 @@ int set_socket_nonblock(sock_t sock);
  */
 int set_socket_nosigpipe(sock_t sock);
 
+/* Enable SO_REUSEADDR on socket.
+ *
+ * return 1 on success
+ * return 0 on failure
+ */
+int set_socket_reuseaddr(sock_t sock);
+
 /* Set socket to dual (IPv4 + IPv6 socket)
  *
  * return 1 on success
@@ -371,8 +369,11 @@ void networking_poll(Networking_Core *net);
  *
  * return Networking_Core object if no problems
  * return NULL if there are problems.
+ *
+ * If error is non NULL it is set to 0 if no issues, 1 if socket related error, 2 if other.
  */
 Networking_Core *new_networking(IP ip, uint16_t port);
+Networking_Core *new_networking_ex(IP ip, uint16_t port_from, uint16_t port_to, unsigned int *error);
 
 /* Function to cleanup networking stuff (doesn't do much right now). */
 void kill_networking(Networking_Core *net);

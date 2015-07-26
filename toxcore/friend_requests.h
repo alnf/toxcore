@@ -30,7 +30,7 @@
 
 typedef struct {
     uint32_t nospam;
-    void (*handle_friendrequest)(void *, const uint8_t *, const uint8_t *, uint16_t, void *);
+    void (*handle_friendrequest)(void *, const uint8_t *, const uint8_t *, size_t, void *);
     uint8_t handle_friendrequest_isset;
     void *handle_friendrequest_object;
     void *handle_friendrequest_userdata;
@@ -51,17 +51,17 @@ typedef struct {
 void set_nospam(Friend_Requests *fr, uint32_t num);
 uint32_t get_nospam(const Friend_Requests *fr);
 
-/* Remove client id from received_requests list.
+/* Remove real_pk from received_requests list.
  *
  *  return 0 if it removed it successfully.
  *  return -1 if it didn't find it.
  */
-int remove_request_received(Friend_Requests *fr, const uint8_t *client_id);
+int remove_request_received(Friend_Requests *fr, const uint8_t *real_pk);
 
 /* Set the function that will be executed when a friend request for us is received.
- *  Function format is function(uint8_t * public_key, uint8_t * data, uint16_t length, void * userdata)
+ *  Function format is function(uint8_t * public_key, uint8_t * data, size_t length, void * userdata)
  */
-void callback_friendrequest(Friend_Requests *fr, void (*function)(void *, const uint8_t *, const uint8_t *, uint16_t,
+void callback_friendrequest(Friend_Requests *fr, void (*function)(void *, const uint8_t *, const uint8_t *, size_t,
                             void *), void *object, void *userdata);
 
 /* Set the function used to check if a friend request should be displayed to the user or not.
